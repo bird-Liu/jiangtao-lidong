@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0a1530" />
+<title>蒋涛祝你立冬快乐</title>
+<meta name="description" content="蒋涛祝你立冬快乐 · 一封来自立冬的信，点击拆开。" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="蒋涛祝你立冬快乐" />
+<meta property="og:description" content="一封来自立冬的信，点击拆开。" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a1530'/%3E%3Cg stroke='%23dbeaff' stroke-width='4' stroke-linecap='round'%3E%3Cpath d='M32 10v44M13 21l38 22M51 21L13 43'/%3E%3C/g%3E%3C/svg%3E" />
+<style>
+  :root{
+    --night:#0a1530; --plum:#1d3566; --ember:#eaf4ff; --candle:#f4f9ff; --dusk:#a9c0e4;
+    --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+    --display:"STKaiti","KaiTi","Kaiti SC","Songti SC",serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:var(--font);
+    background:radial-gradient(90% 70% at 50% 50%,var(--plum),var(--night));
+    background-color:var(--night);
+    color:var(--candle);
+    overflow:hidden;
+    overscroll-behavior:none;
+    -webkit-text-size-adjust:100%;
+  }
+  audio{display:none}
+
+  /* ===== 展示层：初雪信封 → 3D 文字（全程飘雪） ===== */
+  #workBackground{position:fixed;inset:0;z-index:0;background:center/cover no-repeat;pointer-events:none}
+  #stars,#fly{position:fixed;inset:0;z-index:1;width:100%;height:100%;pointer-events:none}
+  .center{
+    position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;
+    padding:24px max(16px,env(safe-area-inset-right)) 24px max(16px,env(safe-area-inset-left));
+  }
+  #envBtn{border:0;background:none;padding:0;cursor:pointer;width:min(62vw,240px)}
+  @keyframes wobble{0%,100%{transform:translateY(0) rotate(0)}40%{transform:translateY(-8px) rotate(-2deg)}60%{transform:translateY(-8px) rotate(2deg)}}
+  #envBtn svg{width:100%;height:auto;display:block;filter:drop-shadow(0 16px 34px rgba(140,190,255,.45));animation:wobble 2.4s ease-in-out infinite}
+  .flap{transform-origin:120px 54px;transition:transform .55s ease}
+  .opened .flap{transform:scaleY(-1)}
+  .env-title{text-shadow:0 0 18px rgba(160,205,255,.6);font-family:var(--display);
+    font-size:clamp(20px,5.6vw,26px);font-weight:700;color:var(--ember);word-break:break-word;letter-spacing:.04em}
+  .env-sub{font-size:12px;color:var(--dusk);letter-spacing:.32em;opacity:.9}
+  .env-tip{font-size:13px;color:var(--dusk);letter-spacing:.2em;animation:tipPulse 2.6s ease-in-out infinite}
+  @keyframes tipPulse{0%,100%{opacity:.55}50%{opacity:1}}
+  #intro{z-index:2;transition:opacity .6s ease,transform .6s ease}
+  #intro.gone{opacity:0;transform:scale(1.25);pointer-events:none}
+  #flash{position:fixed;inset:0;z-index:3;background:radial-gradient(circle,rgba(235,245,255,.95),rgba(127,182,255,0) 70%);opacity:0;pointer-events:none;transition:opacity .5s ease}
+
+  /* ===== 开场之后的重播 ===== */
+  #replay{
+    position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:5;
+    width:40px;height:40px;border-radius:50%;border:1px solid rgba(180,210,255,.35);
+    background:rgba(12,26,54,.55);color:#dce9ff;font-size:16px;line-height:1;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    opacity:0;visibility:hidden;transform:translateY(6px);
+    transition:opacity .4s ease,transform .4s ease,visibility .4s;
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  }
+  body.playing #replay{opacity:1;visibility:visible;transform:none}
+  #replay:active{transform:scale(.94)}
+
+  @media (prefers-reduced-motion:reduce){
+    #envBtn svg{animation:none}
+    .env-tip{animation:none;opacity:.8}
+  }
+</style>
+</head>
+<body>
+<audio id="bgm" loop playsinline webkit-playsinline x5-playsinline preload="auto" src="assets/bgm.m4a"></audio>
+
+<div id="workBackground" aria-hidden="true"></div>
+<canvas id="stars" aria-hidden="true"></canvas>
+<canvas id="fly" aria-hidden="true"></canvas>
+
+<div class="center" id="intro">
+  <button type="button" id="envBtn" aria-label="拆开信封">
+    <svg viewBox="0 0 240 170" aria-hidden="true">
+      <rect x="10" y="40" width="220" height="124" rx="12" fill="#dfeaff"/>
+      <path d="M10 160 L120 92 L230 160 Z" fill="#cbdcf7"/>
+      <path class="flap" d="M10 52 Q10 40 22 40 L218 40 Q230 40 230 52 L120 122 Z" fill="#eef4ff"/>
+      <path d="M10 160 L120 92 L230 160" fill="none" stroke="#b7cdf0" stroke-width="2"/>
+      <g transform="translate(120 104)">
+        <circle r="21" fill="#e2474f"/><circle r="17" fill="none" stroke="#f28a8f" stroke-width="1.5"/>
+        <g stroke="#fff" stroke-width="2.6" stroke-linecap="round">
+          <path d="M0 -12 V12 M-10.4 -6 L10.4 6 M-10.4 6 L10.4 -6"/>
+          <path d="M0 -12 l-3 -3 M0 -12 l3 -3 M0 12 l-3 3 M0 12 l3 3 M-10.4 -6 l-4 0 M-10.4 -6 l-1 -4 M10.4 6 l4 0 M10.4 6 l1 4 M-10.4 6 l-4 0 M-10.4 6 l-1 4 M10.4 -6 l4 0 M10.4 -6 l1 -4"/>
+        </g>
+      </g>
+      <g fill="#fff"><circle cx="40" cy="30" r="3"/><circle cx="200" cy="24" r="2.5"/><circle cx="222" cy="64" r="2"/></g>
+    </svg>
+  </button>
+  <p class="env-title" id="tEnvTitle">蒋涛祝你立冬快乐</p>
+  <div class="env-sub" id="tEnvSub">一封来自立冬的信</div>
+  <div class="env-tip" id="tEnvTip">点击拆开</div>
+</div>
+<div id="flash"></div>
+<button type="button" id="replay" aria-label="再看一次">↻</button>
+
+<script>
+/* ============================================================
+   3D 飘雪文字引擎：文字与雪花从远处迎面飞来
+   ============================================================ */
+function createWinter3D(WORDS, opts){
+  opts = opts || {};
+  const FONT = opts.font || '"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+  let seed = opts.seed || 20261107;
+  const r = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+  const DEPTH = 2200, F = 380;
+  const COLS = ['#ffffff', '#cfe6ff', '#8fc5ff', '#bfe0ff', '#ffc6d9', '#e8f3ff'];
+  const items = [];
+  const N = opts.count || 100;
+
+  for (let i = 0; i < N; i++) {
+    const kindRoll = r();
+    const kind = kindRoll < .68 ? 'word'
+               : kindRoll < .84 ? 'flake'
+               : kindRoll < .90 ? 'dumpling'
+               : kindRoll < .95 ? 'mitten' : 'heart';
+    const x = (r() - .5) * 1500;
+    const y = (r() - .5) * 2400;
+    items.push({
+      kind, x, y, z0: r() * DEPTH, v: .18 + r() * .14,
+      text: WORDS[i % WORDS.length],
+      size: kind === 'word' ? 22 + r() * 18 : 20 + r() * 14,
+      col: COLS[Math.floor(r() * COLS.length)],
+      rot: (r() - .5) * .5, spin: (r() - .5) * .0012, ph: r() * 6
+    });
+  }
+
+  function flake(c, s) {
+    c.strokeStyle = '#eef6ff'; c.lineWidth = Math.max(1.2, s * .07); c.lineCap = 'round';
+    for (let k = 0; k < 6; k++) {
+      c.save(); c.rotate(k * Math.PI / 3);
+      c.beginPath(); c.moveTo(0, 0); c.lineTo(0, -s * .6);
+      c.moveTo(0, -s * .32); c.lineTo(-s * .14, -s * .46);
+      c.moveTo(0, -s * .32); c.lineTo(s * .14, -s * .46);
+      c.moveTo(0, -s * .48); c.lineTo(-s * .09, -s * .57);
+      c.moveTo(0, -s * .48); c.lineTo(s * .09, -s * .57);
+      c.stroke(); c.restore();
+    }
+    c.fillStyle = '#ffffff'; c.beginPath(); c.arc(0, 0, s * .07, 0, 7); c.fill();
+  }
+
+  function dumpling(c, s) {
+    c.fillStyle = '#fff8ec'; c.beginPath(); c.moveTo(-s * .6, s * .1);
+    c.quadraticCurveTo(-s * .55, -s * .5, 0, -s * .52);
+    c.quadraticCurveTo(s * .55, -s * .5, s * .6, s * .1);
+    c.quadraticCurveTo(0, s * .42, -s * .6, s * .1); c.fill();
+    c.strokeStyle = '#e8d6b8'; c.lineWidth = Math.max(1, s * .05);
+    for (let k = -2; k <= 2; k++) {
+      c.beginPath(); c.moveTo(k * s * .16, -s * .5); c.lineTo(k * s * .13, -s * .3); c.stroke();
+    }
+    c.fillStyle = '#3a3a4a';
+    c.beginPath(); c.arc(-s * .16, -s * .02, s * .045, 0, 7); c.arc(s * .16, -s * .02, s * .045, 0, 7); c.fill();
+    c.fillStyle = '#ffb3c8';
+    c.beginPath(); c.ellipse(-s * .3, s * .07, s * .08, s * .05, 0, 0, 7);
+    c.ellipse(s * .3, s * .07, s * .08, s * .05, 0, 0, 7); c.fill();
+  }
+
+  function mitten(c, s) {
+    c.fillStyle = '#e2474f'; c.beginPath(); c.moveTo(-s * .32, s * .5); c.lineTo(-s * .34, -s * .1);
+    c.quadraticCurveTo(-s * .36, -s * .55, 0, -s * .55);
+    c.quadraticCurveTo(s * .34, -s * .55, s * .32, -s * .1);
+    c.quadraticCurveTo(s * .6, -s * .25, s * .55, s * .02);
+    c.quadraticCurveTo(s * .5, s * .15, s * .32, s * .15);
+    c.lineTo(s * .3, s * .5); c.fill();
+    c.fillStyle = '#ffffff'; c.fillRect(-s * .38, s * .38, s * .72, s * .2);
+  }
+
+  function heart(c, s, col) {
+    const k = s * .5; c.fillStyle = col; c.beginPath(); c.moveTo(0, k * .9);
+    c.bezierCurveTo(-k * 1.6, -k * .2, -k * .6, -k * 1.4, 0, -k * .4);
+    c.bezierCurveTo(k * .6, -k * 1.4, k * 1.6, -k * .2, 0, k * .9); c.fill();
+  }
+
+  return function draw(ctx, W, H, t) {
+    const unit = Math.min(W / 360, H / 640) * (opts.scale || 1);
+    // 开场加速：先急速扑面，再匀速飘落
+    const T = t + 2600 * (1 - Math.exp(-t / 650));
+    const swayX = Math.sin(t / 3200) * 60, swayY = Math.cos(t / 4100) * 40;
+    const list = [];
+    for (const it of items) {
+      const z = ((it.z0 - it.v * T) % DEPTH + DEPTH) % DEPTH + 40;
+      list.push([z, it]);
+    }
+    list.sort((a, b) => b[0] - a[0]);
+    const intro = Math.min(1, t / 500);
+    for (const [z, it] of list) {
+      const s = F / z;
+      const sx = W / 2 + (it.x + swayX) * s * unit * .5;
+      const sy = H / 2 + (it.y + swayY) * s * unit * .5;
+      const a = Math.min(1, (DEPTH - z) / 1000) * Math.min(1, (z - 40) / 220) * intro;
+      if (a <= .01) continue;
+      const size = it.size * s * unit;
+      if (sx < -size * 6 || sx > W + size * 6 || sy < -size * 3 || sy > H + size * 3) continue;
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(sx, sy);
+      if (it.kind === 'word') {
+        ctx.rotate(it.rot * .3);
+        ctx.font = `700 ${size}px ${FONT}`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.shadowColor = it.col; ctx.shadowBlur = Math.min(24, size * .5);
+        ctx.fillStyle = it.col; ctx.fillText(it.text, 0, 0);
+      } else {
+        ctx.rotate(it.rot + it.spin * t);
+        ctx.shadowColor = 'rgba(170,210,255,.8)'; ctx.shadowBlur = Math.min(22, size * .45);
+        if (it.kind === 'flake') flake(ctx, size);
+        else if (it.kind === 'dumpling') dumpling(ctx, size);
+        else if (it.kind === 'mitten') mitten(ctx, size);
+        else heart(ctx, size, '#ff8fb0');
+      }
+      ctx.restore();
+    }
+  };
+}
+
+/* ============================================================
+   页面控制
+   ============================================================ */
+(() => {
+  'use strict';
+
+  const LETTER = [
+    '蒋涛祝你立冬快乐',
+    '立冬了 我想你了',
+    '冬天来了 我也来了',
+    '你是我的小暖炉',
+    '一起吃饺子吧',
+    '初雪要和你一起看',
+    'Hello Winter',
+    '立冬快乐',
+    '天冷了 多穿点',
+    '把冬天的温柔都给你',
+    '立冬快乐',
+    '陪你一整个冬天'
+  ];
+
+  const intro = document.getElementById('intro');
+  const envelope = document.getElementById('envBtn');
+  const title = document.getElementById('tEnvTitle');
+  const tip = document.getElementById('tEnvTip');
+  const flash = document.getElementById('flash');
+  const music = document.getElementById('bgm');
+  const replay = document.getElementById('replay');
+  const snowCanvas = document.getElementById('stars');
+  const textCanvas = document.getElementById('fly');
+  const snow = snowCanvas.getContext('2d');
+  const text = textCanvas.getContext('2d');
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let width = 0, height = 0, flakes = [], drawText = null;
+  let startedAt = null;
+
+  title.textContent = LETTER[0];
+  tip.textContent = '点击拆开';
+
+  function resize() {
+    const scale = Math.min(devicePixelRatio || 1, 2);
+    width = innerWidth;
+    height = innerHeight;
+    for (const canvas of [snowCanvas, textCanvas]) {
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+    }
+    snow.setTransform(scale, 0, 0, scale, 0, 0);
+    text.setTransform(scale, 0, 0, scale, 0, 0);
+    flakes = Array.from({ length: Math.min(360, Math.round(width * height / 2600)) }, () => {
+      const depth = Math.random();
+      return {
+        x: Math.random() * width, y: Math.random() * height,
+        radius: .8 + depth * 2.6, speed: .5 + depth * 1.6,
+        opacity: .35 + depth * .55, phase: Math.random() * 6
+      };
+    });
+  }
+
+  function loop(now) {
+    snow.clearRect(0, 0, width, height);
+    snow.fillStyle = '#fff';
+    for (const flake of flakes) {
+      const elapsed = reduceMotion ? 0 : now;
+      const y = (flake.y + elapsed * .02 * flake.speed) % (height + 20) - 10;
+      const x = flake.x + Math.sin(elapsed * .0008 * flake.speed + flake.phase) * 14;
+      snow.globalAlpha = flake.opacity;
+      snow.beginPath();
+      snow.arc(x, y, flake.radius, 0, Math.PI * 2);
+      snow.fill();
+    }
+    snow.globalAlpha = 1;
+
+    text.clearRect(0, 0, width, height);
+    if (startedAt !== null && drawText) {
+      drawText(text, width, height, reduceMotion ? 4000 : now - startedAt);
+    }
+    requestAnimationFrame(loop);
+  }
+
+  function openEnvelope() {
+    if (envelope.disabled) return;
+    envelope.disabled = true;
+    envelope.classList.add('opened');
+
+    music.volume = .8;
+    const playback = music.play();
+    if (playback && playback.catch) playback.catch(() => {});
+
+    setTimeout(() => {
+      intro.classList.add('gone');
+      intro.setAttribute('aria-hidden', 'true');
+      flash.style.opacity = '1';
+      setTimeout(() => { flash.style.opacity = '0'; }, 250);
+      startedAt = performance.now();
+      document.body.classList.add('playing');
+    }, reduceMotion ? 0 : 550);
+  }
+
+  function replayShow() {
+    startedAt = performance.now();
+    try { music.currentTime = 0; } catch (_) {}
+    const playback = music.play();
+    if (playback && playback.catch) playback.catch(() => {});
+    flash.style.opacity = '1';
+    setTimeout(() => { flash.style.opacity = '0'; }, 250);
+  }
+
+  // 文字进入 3D 场：每行最多 16 字，避免单字过大
+  const words = LETTER.map(line => Array.from(line).slice(0, 16).join(''));
+  drawText = createWinter3D(words, { count: Math.round(Math.min(130, 80 + innerWidth / 12)) });
+
+  envelope.addEventListener('click', openEnvelope);
+  replay.addEventListener('click', replayShow);
+
+  addEventListener('resize', () => {
+    const oldW = width;
+    resize();
+    if (Math.abs(oldW - width) > 80) {
+      drawText = createWinter3D(words, { count: Math.round(Math.min(130, 80 + width / 12)) });
+    }
+  });
+  addEventListener('pagehide', () => music.pause());
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) music.pause();
+  });
+
+  resize();
+  requestAnimationFrame(loop);
+
+  // 键盘可访问：回车/空格拆信
+  envelope.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEnvelope(); }
+  });
+})();
+</script>
+</body>
+</html>
